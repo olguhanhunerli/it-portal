@@ -21,7 +21,7 @@ import DashboardRoundedIcon from "@mui/icons-material/DashboardRounded";
 
 const pages = [
   { label: "Tickets", path: "/admin/dashboard/tickets" },
-  { label: "Departman", path: "/departman" },
+  { label: "Departman", path: "/admin/dashboard/department" },
   { label: "Lokasyon", path: "/lokasyon" },
   { label: "Kullanıcılar", path: "/kullanicilar" },
   { label: "Roller", path: "/roller" },

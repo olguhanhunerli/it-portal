@@ -1,4 +1,4 @@
-import Tickets from "@/components/admin/tickets";
+import Tickets from "@/components/admin/ticket/tickets";
 
 export default function Page() {
   return <Tickets />;
