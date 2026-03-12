@@ -4,9 +4,9 @@ const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
 async function request(path, options = {}) {
   let token = null;
+
   if (typeof window !== "undefined") {
-    const user = localStorage.getItem("user");
-    token = user ? JSON.parse(user).accessToken : null;
+    token = localStorage.getItem("accessToken");
   }
 
   const headers = {
@@ -21,6 +21,7 @@ async function request(path, options = {}) {
   const response = await fetch(`${BASE_URL}${path}`, {
     ...options,
     headers,
+    credentials: "include",
   });
 
   let data = null;
@@ -37,19 +38,15 @@ async function request(path, options = {}) {
       case 400:
         toast.error(data?.message || "Geçersiz istek");
         break;
-
       case 401:
         toast.error("Giriş yapmanız gerekiyor");
         break;
-
       case 403:
         toast.error("Bu işlem için yetkiniz yok");
         break;
-
       case 404:
         toast.error("Kaynak bulunamadı");
         break;
-
       case 500:
         if (data?.errors) {
           Object.values(data.errors).forEach((arr) => {
@@ -59,7 +56,6 @@ async function request(path, options = {}) {
           toast.error(data?.message || "Kullanıcı Adı Veya Şifre Yanlış");
         }
         break;
-
       default:
         toast.error("Bir hata oluştu");
         break;
@@ -70,6 +66,7 @@ async function request(path, options = {}) {
 
   return data;
 }
+
 export const api = {
   get: (url) => request(url, { method: "GET" }),
 

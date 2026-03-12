@@ -33,16 +33,36 @@ export default function LoginPage() {
 
     try {
       const result = await account.login(formData);
-      console.log(result);
+      console.log("login result:", result);
 
-      if (result?.success) {
-        localStorage.setItem("user", JSON.stringify(result.data));
-        router.replace("/");
-      } else {
+      if (!result?.success) {
         setError(result?.message || "Giriş başarısız");
+        return;
+      }
+
+      const meResult = await account.getMe();
+      console.log("me result:", meResult);
+
+      if (!meResult?.success) {
+        setError(meResult?.message || "Kullanıcı bilgisi alınamadı");
+        return;
+      }
+
+      const user = meResult?.data;
+      const roles = user?.roles || [];
+
+      localStorage.setItem("user", JSON.stringify(user));
+
+      if (roles.includes("Employee")) {
+        console.log("employee dashboarda gidiyor");
+        router.push("/employee/dashboard");
+      } else {
+        console.log("admin dashboarda gidiyor");
+        router.push("/admin/dashboard/tickets");
       }
     } catch (err) {
       console.log("Login error:", err);
+      setError(err?.message || "Bir hata oluştu");
     } finally {
       setLoading(false);
     }

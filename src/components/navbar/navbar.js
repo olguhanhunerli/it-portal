@@ -40,6 +40,32 @@ export default function Navbar() {
 
   const [anchorElNav, setAnchorElNav] = React.useState(null);
   const [anchorElUser, setAnchorElUser] = React.useState(null);
+  const [user, setUser] = React.useState(null);
+
+  React.useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (error) {
+        console.error("User parse error:", error);
+      }
+    }
+  }, []);
+
+  const isEmployee = user?.roles?.includes("Employee");
+
+  const hiddenForEmployee = [
+    "/admin/dashboard/tickets",
+    "/admin/dashboard/department",
+    "/lokasyon",
+    "/kullanicilar",
+    "/roller",
+  ];
+
+  const filteredPages = isEmployee
+    ? pages.filter((page) => !hiddenForEmployee.includes(page.path))
+    : pages;
 
   const handleOpenNavMenu = (event) => {
     setAnchorElNav(event.currentTarget);
@@ -68,11 +94,18 @@ export default function Navbar() {
     handleCloseNavMenu();
     handleCloseUserMenu();
   };
+
   const handleLogout = () => {
     localStorage.removeItem("user");
+    localStorage.removeItem("accessToken");
     router.push("/login");
     handleCloseUserMenu();
   };
+
+  const initials =
+    user?.fullName?.charAt(0)?.toUpperCase() ||
+    user?.userName?.charAt(0)?.toUpperCase() ||
+    "U";
 
   return (
     <AppBar
@@ -87,7 +120,6 @@ export default function Navbar() {
       <Container maxWidth="xl">
         <Toolbar disableGutters sx={{ minHeight: 72 }}>
           <Box
-            onClick={() => handleNavigate("/")}
             sx={{
               display: { xs: "none", md: "flex" },
               alignItems: "center",
@@ -123,73 +155,75 @@ export default function Navbar() {
               IT Portal
             </Typography>
           </Box>
+          {isEmployee ? (
+            <div></div>
+          ) : (
+            <Box sx={{ flexGrow: 1, display: { xs: "flex", md: "none" } }}>
+              <IconButton
+                size="large"
+                onClick={handleOpenNavMenu}
+                color="inherit"
+                sx={{
+                  border: "1px solid rgba(255,255,255,0.12)",
+                  borderRadius: "12px",
+                }}
+              >
+                <MenuIcon />
+              </IconButton>
 
-          <Box sx={{ flexGrow: 1, display: { xs: "flex", md: "none" } }}>
-            <IconButton
-              size="large"
-              onClick={handleOpenNavMenu}
-              color="inherit"
-              sx={{
-                border: "1px solid rgba(255,255,255,0.12)",
-                borderRadius: "12px",
-              }}
-            >
-              <MenuIcon />
-            </IconButton>
-
-            <Menu
-              anchorEl={anchorElNav}
-              anchorOrigin={{
-                vertical: "bottom",
-                horizontal: "left",
-              }}
-              keepMounted
-              transformOrigin={{
-                vertical: "top",
-                horizontal: "left",
-              }}
-              open={Boolean(anchorElNav)}
-              onClose={handleCloseNavMenu}
-              PaperProps={{
-                sx: {
-                  mt: 1.5,
-                  minWidth: 220,
-                  borderRadius: 3,
-                  backgroundColor: "#0f172a",
-                  color: "#fff",
-                  border: "1px solid rgba(255,255,255,0.08)",
-                  boxShadow: "0 12px 30px rgba(0,0,0,0.25)",
-                },
-              }}
-              sx={{ display: { xs: "block", md: "none" } }}
-            >
-              {pages.map((page) => (
-                <MenuItem
-                  key={page.path}
-                  onClick={() => handleNavigate(page.path)}
-                  sx={{
-                    py: 1.2,
-                    borderRadius: 2,
-                    mx: 1,
-                    my: 0.5,
-                  }}
-                >
-                  <Typography
+              <Menu
+                anchorEl={anchorElNav}
+                anchorOrigin={{
+                  vertical: "bottom",
+                  horizontal: "left",
+                }}
+                keepMounted
+                transformOrigin={{
+                  vertical: "top",
+                  horizontal: "left",
+                }}
+                open={Boolean(anchorElNav)}
+                onClose={handleCloseNavMenu}
+                PaperProps={{
+                  sx: {
+                    mt: 1.5,
+                    minWidth: 220,
+                    borderRadius: 3,
+                    backgroundColor: "#0f172a",
+                    color: "#fff",
+                    border: "1px solid rgba(255,255,255,0.08)",
+                    boxShadow: "0 12px 30px rgba(0,0,0,0.25)",
+                  },
+                }}
+                sx={{ display: { xs: "block", md: "none" } }}
+              >
+                {filteredPages.map((page) => (
+                  <MenuItem
+                    key={page.path}
+                    onClick={() => handleNavigate(page.path)}
                     sx={{
-                      fontSize: 15,
-                      fontWeight: pathname === page.path ? 700 : 500,
-                      color: pathname === page.path ? "#60a5fa" : "#fff",
+                      py: 1.2,
+                      borderRadius: 2,
+                      mx: 1,
+                      my: 0.5,
                     }}
                   >
-                    {page.label}
-                  </Typography>
-                </MenuItem>
-              ))}
-            </Menu>
-          </Box>
+                    <Typography
+                      sx={{
+                        fontSize: 15,
+                        fontWeight: pathname === page.path ? 700 : 500,
+                        color: pathname === page.path ? "#60a5fa" : "#fff",
+                      }}
+                    >
+                      {page.label}
+                    </Typography>
+                  </MenuItem>
+                ))}
+              </Menu>
+            </Box>
+          )}
 
           <Box
-            onClick={() => handleNavigate("/")}
             sx={{
               display: { xs: "flex", md: "none" },
               alignItems: "center",
@@ -231,7 +265,7 @@ export default function Navbar() {
               gap: 1,
             }}
           >
-            {pages.map((page) => {
+            {filteredPages.map((page) => {
               const active = pathname === page.path;
 
               return (
@@ -293,7 +327,7 @@ export default function Navbar() {
                     border: "2px solid rgba(255,255,255,0.18)",
                   }}
                 >
-                  O
+                  {initials}
                 </Avatar>
               </IconButton>
             </Tooltip>
@@ -326,12 +360,12 @@ export default function Navbar() {
             >
               <Box sx={{ px: 1.5, py: 1 }}>
                 <Typography sx={{ fontWeight: 700, fontSize: 15 }}>
-                  Olguhan Hünerli
+                  {user?.fullName || "Kullanıcı"}
                 </Typography>
                 <Typography
                   sx={{ fontSize: 13, color: "rgba(255,255,255,0.6)" }}
                 >
-                  olguhanhunerli@gmail.com
+                  {user?.userName || "-"}
                 </Typography>
               </Box>
 
