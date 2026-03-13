@@ -13,3 +13,15 @@ export const employee = {
     }
   },
 };
+
+export const createTicket = {
+  createTicket: async (formData) => {
+    try {
+      const response = await api.post("portal/my-tickets", formData);
+      return response;
+    } catch (error) {
+      console.error("Error creating ticket:", error);
+      throw error;
+    }
+  },
+};

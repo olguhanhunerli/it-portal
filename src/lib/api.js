@@ -25,8 +25,10 @@ async function request(path, options = {}) {
   });
 
   let data = null;
+
   try {
-    data = await response.json();
+    const raw = await response.text();
+    data = raw ? JSON.parse(raw) : null;
   } catch (error) {
     console.error("Error parsing response:", error);
   }
@@ -53,7 +55,7 @@ async function request(path, options = {}) {
             arr.forEach((err) => toast.error(err));
           });
         } else {
-          toast.error(data?.message || "Kullanıcı Adı Veya Şifre Yanlış");
+          toast.error(data?.message || "Sunucu hatası");
         }
         break;
       default:
@@ -61,7 +63,7 @@ async function request(path, options = {}) {
         break;
     }
 
-    throw data;
+    throw data || new Error("Request failed");
   }
 
   return data;

@@ -10,12 +10,10 @@ import {
   Chip,
   CircularProgress,
   Container,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
   Divider,
+  Drawer,
   Grid,
+  IconButton,
   Pagination,
   Stack,
   Typography,
@@ -26,11 +24,13 @@ import ConfirmationNumberOutlinedIcon from "@mui/icons-material/ConfirmationNumb
 import PendingActionsOutlinedIcon from "@mui/icons-material/PendingActionsOutlined";
 import CheckCircleOutlineOutlinedIcon from "@mui/icons-material/CheckCircleOutlineOutlined";
 import ArrowForwardIosRoundedIcon from "@mui/icons-material/ArrowForwardIosRounded";
+import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import { employee } from "@/services/employee/employee";
+import CreateTicket from "../ticketcreate/ticketcreate";
+import { useRouter } from "next/navigation";
 
 const getStatusMeta = (statusName) => {
   const normalized = (statusName || "").toLowerCase();
-
   if (
     normalized.includes("tamam") ||
     normalized.includes("kapa") ||
@@ -70,7 +70,7 @@ const formatDate = (value) => {
       hour: "2-digit",
       minute: "2-digit",
     }).format(new Date(value));
-  } catch (error) {
+  } catch {
     return value;
   }
 };
@@ -105,6 +105,65 @@ const getStats = (tickets, totalCount) => {
   );
 };
 
+function StatCard({ title, value, icon, bgColor, textColor }) {
+  return (
+    <Card
+      elevation={0}
+      sx={{
+        height: "100%",
+        borderRadius: 4,
+        border: "1px solid",
+        borderColor: "divider",
+        boxShadow: "0 1px 2px rgba(16,24,40,0.04)",
+      }}
+    >
+      <CardContent sx={{ p: 2.5 }}>
+        <Stack direction="row" spacing={2} alignItems="center">
+          <Box
+            sx={{
+              width: 52,
+              height: 52,
+              borderRadius: 3,
+              display: "grid",
+              placeItems: "center",
+              bgcolor: bgColor,
+              color: textColor,
+              flexShrink: 0,
+            }}
+          >
+            {icon}
+          </Box>
+
+          <Box>
+            <Typography variant="body2" color="text.secondary">
+              {title}
+            </Typography>
+            <Typography variant="h5" fontWeight={800}>
+              {value}
+            </Typography>
+          </Box>
+        </Stack>
+      </CardContent>
+    </Card>
+  );
+}
+
+function TicketInfoItem({ label, value }) {
+  return (
+    <Box>
+      <Typography
+        variant="caption"
+        color="text.secondary"
+        sx={{ display: "block", mb: 0.5 }}
+      >
+        {label}
+      </Typography>
+      <Typography variant="body2" fontWeight={600}>
+        {value || "-"}
+      </Typography>
+    </Box>
+  );
+}
 export default function DashboardPage() {
   const [tickets, setTickets] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
@@ -113,7 +172,8 @@ export default function DashboardPage() {
   const [pageSize] = React.useState(10);
   const [totalCount, setTotalCount] = React.useState(0);
   const [totalPages, setTotalPages] = React.useState(1);
-  const [openCreateModal, setOpenCreateModal] = React.useState(false);
+  const router = useRouter();
+  const [openCreatePanel, setOpenCreatePanel] = React.useState(false);
 
   const fetchTickets = React.useCallback(async () => {
     try {
@@ -134,6 +194,7 @@ export default function DashboardPage() {
       setLoading(false);
     }
   }, [page, pageSize]);
+
   React.useEffect(() => {
     fetchTickets();
   }, [fetchTickets]);
@@ -143,12 +204,21 @@ export default function DashboardPage() {
     [tickets, totalCount],
   );
 
+  const handleCloseDrawer = () => {
+    setOpenCreatePanel(false);
+  };
+
+  const handleCreateSuccess = async () => {
+    setOpenCreatePanel(false);
+    await fetchTickets();
+  };
+
   return (
     <Box
       sx={{
         minHeight: "100vh",
-        bgcolor: "grey.50",
-        py: { xs: 3, md: 5 },
+        bgcolor: "#f8fafc",
+        py: { xs: 2, md: 4 },
       }}
     >
       <Container maxWidth="xl">
@@ -156,14 +226,15 @@ export default function DashboardPage() {
           <Card
             elevation={0}
             sx={{
-              borderRadius: 4,
+              borderRadius: 5,
               border: "1px solid",
               borderColor: "divider",
+              overflow: "hidden",
               background: (theme) =>
-                `linear-gradient(135deg, ${theme.palette.primary.light}22 0%, ${theme.palette.background.paper} 55%)`,
+                `linear-gradient(135deg, ${theme.palette.primary.main}10 0%, ${theme.palette.background.paper} 55%)`,
             }}
           >
-            <CardContent sx={{ p: { xs: 3, md: 4 } }}>
+            <CardContent sx={{ p: { xs: 2.5, md: 4 } }}>
               <Stack
                 direction={{ xs: "column", md: "row" }}
                 spacing={2}
@@ -171,11 +242,25 @@ export default function DashboardPage() {
                 justifyContent="space-between"
               >
                 <Box>
-                  <Typography variant="overline" color="text.secondary">
-                    IT Portal
+                  <Typography
+                    variant="overline"
+                    color="text.secondary"
+                    sx={{ letterSpacing: 1.2 }}
+                  >
+                    IT PORTAL
                   </Typography>
-                  <Typography variant="h4" fontWeight={700} gutterBottom>
-                    Ticket Portal
+
+                  <Typography
+                    variant="h4"
+                    fontWeight={800}
+                    sx={{ mb: 0.5, lineHeight: 1.15 }}
+                  >
+                    Ticket Dashboard
+                  </Typography>
+
+                  <Typography variant="body2" color="text.secondary">
+                    Taleplerini görüntüle, yeni ticket oluştur ve mevcut
+                    kayıtları yönet.
                   </Typography>
                 </Box>
 
@@ -185,15 +270,23 @@ export default function DashboardPage() {
                     startIcon={<RefreshOutlinedIcon />}
                     onClick={fetchTickets}
                     disabled={loading}
-                    sx={{ borderRadius: 999 }}
+                    sx={{
+                      borderRadius: 999,
+                      px: 2,
+                      minWidth: 120,
+                    }}
                   >
                     Yenile
                   </Button>
+
                   <Button
                     variant="contained"
                     startIcon={<AddIcon />}
-                    onClick={() => setOpenCreateModal(true)}
-                    sx={{ borderRadius: 999, px: 2.5 }}
+                    onClick={() => router.push("/employee/CreateTicket")}
+                    sx={{
+                      borderRadius: 999,
+                      px: 2.5,
+                    }}
                   >
                     Yeni Ticket
                   </Button>
@@ -204,123 +297,43 @@ export default function DashboardPage() {
 
           <Grid container spacing={2.5}>
             <Grid item xs={12} md={4}>
-              <Card
-                elevation={0}
-                sx={{
-                  borderRadius: 4,
-                  border: "1px solid",
-                  borderColor: "divider",
-                }}
-              >
-                <CardContent>
-                  <Stack direction="row" spacing={2} alignItems="center">
-                    <Box
-                      sx={{
-                        width: 48,
-                        height: 48,
-                        borderRadius: 3,
-                        display: "grid",
-                        placeItems: "center",
-                        bgcolor: "primary.main",
-                        color: "primary.contrastText",
-                      }}
-                    >
-                      <ConfirmationNumberOutlinedIcon />
-                    </Box>
-                    <Box>
-                      <Typography variant="body2" color="text.secondary">
-                        Toplam Ticket
-                      </Typography>
-                      <Typography variant="h5" fontWeight={700}>
-                        {stats.total}
-                      </Typography>
-                    </Box>
-                  </Stack>
-                </CardContent>
-              </Card>
+              <StatCard
+                title="Toplam Ticket"
+                value={stats.total}
+                icon={<ConfirmationNumberOutlinedIcon />}
+                bgColor="primary.main"
+                textColor="primary.contrastText"
+              />
             </Grid>
 
             <Grid item xs={12} md={4}>
-              <Card
-                elevation={0}
-                sx={{
-                  borderRadius: 4,
-                  border: "1px solid",
-                  borderColor: "divider",
-                }}
-              >
-                <CardContent>
-                  <Stack direction="row" spacing={2} alignItems="center">
-                    <Box
-                      sx={{
-                        width: 48,
-                        height: 48,
-                        borderRadius: 3,
-                        display: "grid",
-                        placeItems: "center",
-                        bgcolor: "warning.main",
-                        color: "warning.contrastText",
-                      }}
-                    >
-                      <PendingActionsOutlinedIcon />
-                    </Box>
-                    <Box>
-                      <Typography variant="body2" color="text.secondary">
-                        Açık / Bekleyen
-                      </Typography>
-                      <Typography variant="h5" fontWeight={700}>
-                        {stats.open + stats.pending}
-                      </Typography>
-                    </Box>
-                  </Stack>
-                </CardContent>
-              </Card>
+              <StatCard
+                title="Açık / Bekleyen"
+                value={stats.open + stats.pending}
+                icon={<PendingActionsOutlinedIcon />}
+                bgColor="warning.main"
+                textColor="warning.contrastText"
+              />
             </Grid>
 
             <Grid item xs={12} md={4}>
-              <Card
-                elevation={0}
-                sx={{
-                  borderRadius: 4,
-                  border: "1px solid",
-                  borderColor: "divider",
-                }}
-              >
-                <CardContent>
-                  <Stack direction="row" spacing={2} alignItems="center">
-                    <Box
-                      sx={{
-                        width: 48,
-                        height: 48,
-                        borderRadius: 3,
-                        display: "grid",
-                        placeItems: "center",
-                        bgcolor: "success.main",
-                        color: "success.contrastText",
-                      }}
-                    >
-                      <CheckCircleOutlineOutlinedIcon />
-                    </Box>
-                    <Box>
-                      <Typography variant="body2" color="text.secondary">
-                        Tamamlanan
-                      </Typography>
-                      <Typography variant="h5" fontWeight={700}>
-                        {stats.closed}
-                      </Typography>
-                    </Box>
-                  </Stack>
-                </CardContent>
-              </Card>
+              <StatCard
+                title="Tamamlanan"
+                value={stats.closed}
+                icon={<CheckCircleOutlineOutlinedIcon />}
+                bgColor="success.main"
+                textColor="success.contrastText"
+              />
             </Grid>
           </Grid>
 
           <Card
             elevation={0}
             sx={{
-              borderRadius: 4,
+              borderRadius: 5,
               border: "1px solid",
               borderColor: "divider",
+              boxShadow: "0 1px 2px rgba(16,24,40,0.04)",
             }}
           >
             <CardContent sx={{ p: { xs: 2, md: 3 } }}>
@@ -332,20 +345,22 @@ export default function DashboardPage() {
                 sx={{ mb: 2 }}
               >
                 <Box>
-                  <Typography variant="h6" fontWeight={700}>
+                  <Typography variant="h6" fontWeight={800}>
                     Ticket Listesi
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    Son oluşturulan kayıtlar burada listelenir.
+                    Son oluşturulan destek kayıtları burada listelenir.
                   </Typography>
                 </Box>
 
-                <Typography variant="body2" color="text.secondary">
-                  Toplam {totalCount} kayıt
-                </Typography>
+                <Chip
+                  label={`Toplam ${totalCount} kayıt`}
+                  variant="outlined"
+                  sx={{ borderRadius: 999, fontWeight: 600 }}
+                />
               </Stack>
 
-              <Divider sx={{ mb: 2 }} />
+              <Divider sx={{ mb: 2.5 }} />
 
               {error ? (
                 <Alert severity="error" sx={{ mb: 2 }}>
@@ -354,33 +369,38 @@ export default function DashboardPage() {
               ) : null}
 
               {loading ? (
-                <Box sx={{ py: 8, display: "flex", justifyContent: "center" }}>
+                <Box sx={{ py: 10, display: "flex", justifyContent: "center" }}>
                   <CircularProgress />
                 </Box>
               ) : tickets.length === 0 ? (
                 <Box
                   sx={{
                     py: 8,
+                    px: 3,
                     textAlign: "center",
                     border: "1px dashed",
                     borderColor: "divider",
                     borderRadius: 4,
+                    bgcolor: "background.default",
                   }}
                 >
-                  <Typography variant="h6" gutterBottom>
+                  <Typography variant="h6" fontWeight={700} gutterBottom>
                     Henüz ticket bulunmuyor
                   </Typography>
+
                   <Typography
                     variant="body2"
                     color="text.secondary"
-                    sx={{ mb: 2 }}
+                    sx={{ mb: 2.5, maxWidth: 420, mx: "auto" }}
                   >
-                    İlk kaydı oluşturmak için Yeni Ticket butonunu kullan.
+                    İlk kaydı oluşturmak için aşağıdaki butonu kullanabilirsin.
                   </Typography>
+
                   <Button
                     variant="contained"
                     startIcon={<AddIcon />}
-                    onClick={() => setOpenCreateModal(true)}
+                    onClick={() => setOpenCreatePanel(true)}
+                    sx={{ borderRadius: 999, px: 2.5 }}
                   >
                     Yeni Ticket
                   </Button>
@@ -395,33 +415,46 @@ export default function DashboardPage() {
                         key={ticket.id}
                         elevation={0}
                         sx={{
-                          borderRadius: 3,
+                          borderRadius: 4,
                           border: "1px solid",
                           borderColor: "divider",
+                          boxShadow: "0 1px 2px rgba(16,24,40,0.03)",
                           transition: "all 0.2s ease",
                           "&:hover": {
                             borderColor: "primary.main",
                             transform: "translateY(-2px)",
+                            boxShadow: "0 8px 24px rgba(16,24,40,0.08)",
                           },
                         }}
                       >
-                        <CardContent>
+                        <CardContent sx={{ p: 2.5 }}>
                           <Stack spacing={2}>
                             <Stack
                               direction={{ xs: "column", md: "row" }}
                               spacing={1.5}
                               justifyContent="space-between"
-                              alignItems={{ xs: "flex-start", md: "center" }}
+                              alignItems={{
+                                xs: "flex-start",
+                                md: "flex-start",
+                              }}
                             >
-                              <Box>
+                              <Box sx={{ minWidth: 0 }}>
                                 <Typography
                                   variant="subtitle2"
                                   color="text.secondary"
                                   gutterBottom
                                 >
-                                  {ticket.ticketNumber}
+                                  {ticket.ticketNumber || "-"}
                                 </Typography>
-                                <Typography variant="h6" fontWeight={700}>
+
+                                <Typography
+                                  variant="h6"
+                                  fontWeight={800}
+                                  sx={{
+                                    lineHeight: 1.2,
+                                    wordBreak: "break-word",
+                                  }}
+                                >
                                   {ticket.title || "Başlıksız Ticket"}
                                 </Typography>
                               </Box>
@@ -430,67 +463,52 @@ export default function DashboardPage() {
                                 label={statusMeta.label}
                                 color={statusMeta.color}
                                 variant="filled"
-                                sx={{ fontWeight: 600 }}
+                                sx={{
+                                  fontWeight: 700,
+                                  borderRadius: 999,
+                                }}
                               />
                             </Stack>
 
                             <Grid container spacing={2}>
-                              <Grid item xs={12} md={3}>
-                                <Typography
-                                  variant="caption"
-                                  color="text.secondary"
-                                >
-                                  Öncelik
-                                </Typography>
-                                <Typography variant="body2" fontWeight={600}>
-                                  {ticket.priorityName || "-"}
-                                </Typography>
+                              <Grid item xs={12} sm={6} md={3}>
+                                <TicketInfoItem
+                                  label="Öncelik"
+                                  value={ticket.priorityName || "-"}
+                                />
                               </Grid>
 
-                              <Grid item xs={12} md={3}>
-                                <Typography
-                                  variant="caption"
-                                  color="text.secondary"
-                                >
-                                  Atanan Kişi
-                                </Typography>
-                                <Typography variant="body2" fontWeight={600}>
-                                  {ticket.assigneeName || "Atanmadı"}
-                                </Typography>
+                              <Grid item xs={12} sm={6} md={3}>
+                                <TicketInfoItem
+                                  label="Atanan Kişi"
+                                  value={ticket.assigneeName || "Atanmadı"}
+                                />
                               </Grid>
 
-                              <Grid item xs={12} md={3}>
-                                <Typography
-                                  variant="caption"
-                                  color="text.secondary"
-                                >
-                                  Oluşturulma
-                                </Typography>
-                                <Typography variant="body2" fontWeight={600}>
-                                  {formatDate(ticket.createdAt)}
-                                </Typography>
+                              <Grid item xs={12} sm={6} md={3}>
+                                <TicketInfoItem
+                                  label="Oluşturulma"
+                                  value={formatDate(ticket.createdAt)}
+                                />
                               </Grid>
 
-                              <Grid item xs={12} md={3}>
-                                <Typography
-                                  variant="caption"
-                                  color="text.secondary"
-                                >
-                                  Termin
-                                </Typography>
-                                <Typography variant="body2" fontWeight={600}>
-                                  {formatDate(ticket.dueAt)}
-                                </Typography>
+                              <Grid item xs={12} sm={6} md={3}>
+                                <TicketInfoItem
+                                  label="Termin"
+                                  value={formatDate(ticket.dueAt)}
+                                />
                               </Grid>
                             </Grid>
 
                             <Stack direction="row" justifyContent="flex-end">
                               <Button
+                                variant="text"
                                 endIcon={
                                   <ArrowForwardIosRoundedIcon
                                     sx={{ fontSize: 14 }}
                                   />
                                 }
+                                sx={{ borderRadius: 999 }}
                               >
                                 Detaya Git
                               </Button>
@@ -509,6 +527,7 @@ export default function DashboardPage() {
                     page={page}
                     count={totalPages}
                     color="primary"
+                    shape="rounded"
                     onChange={(_, value) => setPage(value)}
                   />
                 </Box>
@@ -517,28 +536,6 @@ export default function DashboardPage() {
           </Card>
         </Stack>
       </Container>
-
-      <Dialog
-        open={openCreateModal}
-        onClose={() => setOpenCreateModal(false)}
-        fullWidth
-        maxWidth="sm"
-      >
-        <DialogTitle>Yeni Ticket</DialogTitle>
-        <DialogContent>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-            Şimdilik sadece dashboard istendiği için bu alan placeholder
-            bırakıldı. Sonraki adımda buraya form veya create sayfasına
-            yönlendirme ekleyebiliriz.
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenCreateModal(false)}>Kapat</Button>
-          <Button variant="contained" onClick={() => setOpenCreateModal(false)}>
-            Tamam
-          </Button>
-        </DialogActions>
-      </Dialog>
     </Box>
   );
 }
