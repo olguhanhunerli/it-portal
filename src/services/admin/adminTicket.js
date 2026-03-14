@@ -12,4 +12,13 @@ export const adminTickets = {
       throw error;
     }
   },
+  getById: async (id) => {
+    try {
+      const response = await api.get(`admin/tickets/${id}`);
+      return response;
+    } catch (error) {
+      console.error("Error fetching ticket:", error);
+      throw error;
+    }
+  },
 };

@@ -8,6 +8,7 @@ import Typography from "@mui/material/Typography";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 import { Container, Chip, Box, Button } from "@mui/material";
 import { adminTickets } from "@/services/admin/adminTicket";
+import Link from "next/link";
 
 export default function Tickets() {
   const [tickets, setTickets] = useState([]);
@@ -94,9 +95,11 @@ export default function Tickets() {
                 ? new Date(ticket.dueAt).toLocaleString("tr-TR")
                 : "Yok"}
             </Typography>
-            <Button variant="contained" size="small" sx={{ mt: 2 }}>
-              Detayları Gör
-            </Button>
+            <Link href={`/admin/dashboard/tickets/${ticket.id}`}>
+              <Button variant="contained" size="small" sx={{ mt: 2 }}>
+                Detayları Gör
+              </Button>
+            </Link>
           </AccordionDetails>
         </Accordion>
       ))}
