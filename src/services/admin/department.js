@@ -37,3 +37,27 @@ export const DepartmentUpdate = {
     }
   },
 };
+
+export const DepartmentCreate = {
+  post: async (data) => {
+    try {
+      const repsonse = await api.post("Department", data);
+      return repsonse;
+    } catch (error) {
+      console.error("Error creating department:", error);
+      throw error;
+    }
+  },
+};
+
+export const DepartmentDelete = {
+  delete: async (id) => {
+    try {
+      const response = await api.delete(`Department/${id}`);
+      return response;
+    } catch (error) {
+      console.error("Error deleting department:", error);
+      throw error;
+    }
+  },
+};

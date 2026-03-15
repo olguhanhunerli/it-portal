@@ -1,3 +1,5 @@
+import Tickets from "@/components/admin/ticket/tickets";
+
 export default function Home() {
-  return <h1>home page</h1>;
+  return <Tickets />;
 }

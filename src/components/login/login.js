@@ -51,8 +51,6 @@ export default function LoginPage() {
       const user = meResult?.data;
       const roles = user?.roles || [];
 
-      localStorage.setItem("user", JSON.stringify(user));
-
       if (roles.includes("Employee")) {
         console.log("employee dashboarda gidiyor");
         router.push("/employee/dashboard");

@@ -16,13 +16,15 @@ import Tooltip from "@mui/material/Tooltip";
 import MenuItem from "@mui/material/MenuItem";
 import Badge from "@mui/material/Badge";
 import Divider from "@mui/material/Divider";
+import CircularProgress from "@mui/material/CircularProgress";
 import NotificationsNoneRoundedIcon from "@mui/icons-material/NotificationsNoneRounded";
 import DashboardRoundedIcon from "@mui/icons-material/DashboardRounded";
+import account from "@/services/account/account";
 
 const pages = [
   { label: "Tickets", path: "/admin/dashboard/tickets" },
   { label: "Departman", path: "/admin/dashboard/department" },
-  { label: "Lokasyon", path: "/lokasyon" },
+  { label: "Lokasyon", path: "/admin/dashboard/location" },
   { label: "Kullanıcılar", path: "/kullanicilar" },
   { label: "Roller", path: "/roller" },
 ];
@@ -41,24 +43,35 @@ export default function Navbar() {
   const [anchorElNav, setAnchorElNav] = React.useState(null);
   const [anchorElUser, setAnchorElUser] = React.useState(null);
   const [user, setUser] = React.useState(null);
+  const [loadingUser, setLoadingUser] = React.useState(true);
 
   React.useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
+    const fetchMe = async () => {
       try {
-        setUser(JSON.parse(storedUser));
+        setLoadingUser(true);
+        const res = await account.getMe();
+        setUser(res?.data?.data ?? res?.data ?? null);
       } catch (error) {
-        console.error("User parse error:", error);
+        console.error("getMe error:", error);
+        setUser(null);
+
+        if (error?.response?.status === 401) {
+          router.push("/login");
+        }
+      } finally {
+        setLoadingUser(false);
       }
-    }
-  }, []);
+    };
+
+    fetchMe();
+  }, [router]);
 
   const isEmployee = user?.roles?.includes("Employee");
 
   const hiddenForEmployee = [
     "/admin/dashboard/tickets",
     "/admin/dashboard/department",
-    "/lokasyon",
+    "/admin/dashboard/location",
     "/kullanicilar",
     "/roller",
   ];
@@ -95,9 +108,8 @@ export default function Navbar() {
     handleCloseUserMenu();
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("user");
-    localStorage.removeItem("accessToken");
+  const handleLogout = async () => {
+    setUser(null);
     router.push("/login");
     handleCloseUserMenu();
   };
@@ -155,8 +167,9 @@ export default function Navbar() {
               IT Portal
             </Typography>
           </Box>
+
           {isEmployee ? (
-            <div></div>
+            <div />
           ) : (
             <Box sx={{ flexGrow: 1, display: { xs: "flex", md: "none" } }}>
               <IconButton
@@ -327,7 +340,11 @@ export default function Navbar() {
                     border: "2px solid rgba(255,255,255,0.18)",
                   }}
                 >
-                  {initials}
+                  {loadingUser ? (
+                    <CircularProgress size={18} color="inherit" />
+                  ) : (
+                    initials
+                  )}
                 </Avatar>
               </IconButton>
             </Tooltip>
